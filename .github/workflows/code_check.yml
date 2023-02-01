@@ -35,4 +35,4 @@ jobs:
 
       - name: Lint
         run: |
-          black --check ./abstra-runtimes
+          black --check ./abstra_runtimes
