@@ -1,3 +1,3 @@
 # abstra-runtimes-lib
 
-collectes runtimes/executions for abstra cloud platform
+Collects runtimes/executions for Abstra Cloud platform
