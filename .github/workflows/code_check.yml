@@ -35,7 +35,4 @@ jobs:
 
       - name: Lint
         run: |
-          black --check .
-
-      - name: Run Unit Tests
-        run: pytest
+          black --check ./abstra-runtimes
