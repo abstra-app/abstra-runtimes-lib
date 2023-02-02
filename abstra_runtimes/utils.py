@@ -35,3 +35,8 @@ def convert_answer(cls, value):
 def revert_value(cls, value):
     revert = get_staticmethod(cls, "__revert_value")
     return revert(value) if revert else value
+
+
+def read_file(filename: str):
+    with open(filename, "r") as f:
+        return f.read()

@@ -1,6 +1,6 @@
 import sys
 import abstra.dashes as abstra_dashes
-from hackerforms.auth import AuthResponse
+from .hf import AuthResponse
 
 
 def overload_stdio(broker):

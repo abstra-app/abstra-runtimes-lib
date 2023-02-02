@@ -1,8 +1,8 @@
-import websocket as ws, os, sys, traceback
+import websocket as ws, os, traceback, fire
 
 from .broker import DashesBroker
-from .utils import convert_answer, revert_value, btos
-from hackerforms.widget_utils import get_widget_class
+from .utils import convert_answer, revert_value, btos, read_file
+from .hf import get_widget_class
 
 
 class PythonProgram:
@@ -188,11 +188,11 @@ class MessageHandler:
             )
 
 
-def run(code, execution_id):
+def __run__(code: str, execution_id: str):
     broker = DashesBroker(execution_id)
 
     try:
-        py = PythonProgram(btos(code))
+        py = PythonProgram(code)
         broker.send({"type": "program-ready"})
     except Exception as e:
         broker.send({"type": "program-start-failed", "error": repr(e)})
@@ -208,16 +208,25 @@ def run(code, execution_id):
             exit()
 
 
-if __name__ == "__main__":
-    if sys.argv[1] == "run":
-        code = os.getenv("CODE")
-        execution_id = os.getenv("EXECUTION_ID")
-
-        if not code or not execution_id:
-            print("Missing CODE or EXECUTION_ID")
+class CLI(object):
+    def run(self, **kwargs):
+        execution_id = kwargs.get("execId") or os.getenv("EXECUTION_ID")
+        if not execution_id:
+            print("Missing EXECUTION_ID")
             exit()
 
-        run(code, execution_id)
-    else:
-        print("Unknown command")
-        exit()
+        code = None
+        if kwargs.get("file"):
+            code = read_file(kwargs.get("file"))
+        elif os.getenv("CODE"):
+            code = btos(os.getenv("CODE"))
+
+        if not code:
+            print("Missing CODE")
+            exit()
+
+        __run__(code, execution_id)
+
+
+if __name__ == "__main__":
+    fire.Fire(CLI)
