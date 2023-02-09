@@ -1,5 +1,5 @@
 import websocket as ws, os, traceback, fire
-
+import traceback
 from .broker import DashesBroker
 from .utils import convert_answer, revert_value, btos, read_file
 from .hf import get_widget_class
@@ -45,7 +45,7 @@ class PythonProgram:
             self.ex(cmd)
         except Exception as e:
             traceback.print_exc()
-            return {"repr": repr(e)}
+            return {"repr": traceback.format_exc()}
         finally:
             self.state.pop("__widget__", None)
             self.state.pop("__event__", None)
@@ -76,17 +76,17 @@ class PythonProgram:
                     )
 
                 except Exception as e:
-                    computed_widgets["errors"]["variables"][wid] = {"repr": repr(e)}
+                    computed_widgets["errors"]["variables"][wid] = {"repr": traceback.format_exc()}
 
             for prop, expr in widget["props"].items():
                 try:
                     props[prop] = self.ev(expr) if expr else None
                 except Exception as e:
-                    errors[prop] = {"repr": repr(e)}
+                    errors[prop] = {"repr": traceback.format_exc()}
             try:
                 computed_widgets["props"][wid] = widget_class(**props).json()
             except Exception as e:
-                computed_widgets["errors"]["widgets"][wid] = {"repr": repr(e)}
+                computed_widgets["errors"]["widgets"][wid] = {"repr": traceback.format_exc()}
             computed_widgets["errors"]["props"][wid] = errors
 
         self.state.pop("__widget__", None)
@@ -169,7 +169,7 @@ class MessageHandler:
                 self.py.ex(data["expression"])
                 self.broker.send({"type": "eval-return", "repr": ""})
         except Exception as e:
-            self.broker.send({"type": "eval-error", "repr": repr(e)})
+            self.broker.send({"type": "eval-error", "repr": traceback.format_exc()})
 
         self._compute_and_send_widgets_props(data["state"])
 
@@ -184,7 +184,7 @@ class MessageHandler:
             self.broker.send({"type": "widgets-computed", **computed})
         except Exception as e:
             self.broker.send(
-                {"type": "widgets-computed", "errors": {"general": {"repr": repr(e)}}}
+                {"type": "widgets-computed", "errors": {"general": {"repr": traceback.format_exc()}}}
             )
 
 
@@ -195,7 +195,7 @@ def __run__(code: str, execution_id: str):
         py = PythonProgram(code)
         broker.send({"type": "program-ready"})
     except Exception as e:
-        broker.send({"type": "program-start-failed", "error": repr(e)})
+        broker.send({"type": "program-start-failed", "error": traceback.format_exc()})
         exit()
 
     msg_handler = MessageHandler(py, broker)
