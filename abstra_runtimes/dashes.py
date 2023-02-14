@@ -10,6 +10,8 @@ class PythonProgram:
         # widgets: { [wid]: { type: string, props: {[prop]: expr}, events: {[evt]: cmd} } }
         self.widgets = None
         self.state = {}
+        # dash_page_state: { timestamp: int, widgets: { [widgetId: string]: { value: any } } }
+        self.dash_page_state = None
         if code:
             self.ex(code)
 
@@ -28,15 +30,14 @@ class PythonProgram:
         finally:
             self.state.pop("__temp_value__", None)
 
-    def get_widget_context(self, state, wid):
+    def get_widget_context(self, wid):
         cls = get_widget_class(self.widgets[wid]["type"])
-        value = state["widgets"][wid]["value"]
+        value = self.dash_page_state["widgets"][wid]["value"]
         converted_value = convert_answer(cls, value)
         return cls, converted_value
 
-    def execute_widget_event(self, wid, cmd, state):
-        # state: { widgets: { [widgetId: string]: { value: any } } }
-        _, widget_value = self.get_widget_context(state, wid)
+    def execute_widget_event(self, wid, cmd):
+        _, widget_value = self.get_widget_context(wid)
 
         self.state.update({"__widget__": widget_value})
         self.state.update({"__event__": {"value": widget_value}})
@@ -50,16 +51,15 @@ class PythonProgram:
             self.state.pop("__widget__", None)
             self.state.pop("__event__", None)
 
-    def evaluate_widgets(self, state):
-        # state: { timestamp: int, widgets: { [widgetId: string]: { value: any } } }
+    def evaluate_widgets(self):
         computed_widgets = {
-            "stateTimestamp": state.get("timestamp"),
+            "stateTimestamp": self.dash_page_state.get("timestamp"),
             "props": {},
             "variables": {},
             "errors": {"widgets": {}, "props": {}, "variables": {}},
         }
         for wid, widget in self.widgets.items():
-            widget_class, widget_value = self.get_widget_context(state, wid)
+            widget_class, widget_value = self.get_widget_context(wid)
             self.state.update({"__widget__": widget_value})
 
             props = {"key": "key"}
@@ -76,7 +76,9 @@ class PythonProgram:
                     )
 
                 except Exception as e:
-                    computed_widgets["errors"]["variables"][wid] = {"repr": traceback.format_exc()}
+                    computed_widgets["errors"]["variables"][wid] = {
+                        "repr": traceback.format_exc()
+                    }
 
             for prop, expr in widget["props"].items():
                 try:
@@ -86,7 +88,9 @@ class PythonProgram:
             try:
                 computed_widgets["props"][wid] = widget_class(**props).json()
             except Exception as e:
-                computed_widgets["errors"]["widgets"][wid] = {"repr": traceback.format_exc()}
+                computed_widgets["errors"]["widgets"][wid] = {
+                    "repr": traceback.format_exc()
+                }
             computed_widgets["errors"]["props"][wid] = errors
 
         self.state.pop("__widget__", None)
@@ -122,6 +126,7 @@ class MessageHandler:
             "widget-input": self.widget_input,
         }
         handler = handlers.get(type, self.default_handler)
+        self.py.dash_page_state = data.get("state", self.py.dash_page_state)
         handler(data)
 
     def default_handler(self, _data):
@@ -131,33 +136,31 @@ class MessageHandler:
         # data: { type: widget-definition, widgets: { [wid]: { type: string, props: {[prop]: expr}, events: {[evt]: cmd} } } }
         self.py.widgets = data["widgets"]
 
-    def start(self, data):
+    def start(self, _data):
         # data: { type: start, state: PAGESTATE }
-        self._compute_and_send_widgets_props(data["state"])
+        self._compute_and_send_widgets_props()
 
     def widget_input(self, data):
         # data: { type: widget-input, widgetId: string, state: PAGESTATE }
-        state = data["state"]
         widget_id = data["widgetId"]
         variable = self.py.widgets[widget_id].get("variable")
 
         if not variable:
             return
 
-        _, value = self.py.get_widget_context(state, widget_id)
+        _, value = self.py.get_widget_context(widget_id)
         self.py.set_variable(variable, value)
-        self._compute_and_send_widgets_props(state)
+        self._compute_and_send_widgets_props()
 
     def widget_event(self, data):
         # data: { type: widget-event, widgetId: string, event: { type: string }, state: PAGESTATE }
-        state = data["state"]
         widget_id = data["widgetId"]
         type = data["event"]["type"]
 
         cmd = self.py.widgets[widget_id]["events"].get(type)
         if cmd:
-            self.py.execute_widget_event(widget_id, cmd, state)
-        self._compute_and_send_widgets_props(state)
+            self.py.execute_widget_event(widget_id, cmd)
+        self._compute_and_send_widgets_props()
 
     def eval(self, data):
         # data: {type: eval, expression: string}
@@ -171,20 +174,23 @@ class MessageHandler:
         except Exception as e:
             self.broker.send({"type": "eval-error", "repr": traceback.format_exc()})
 
-        self._compute_and_send_widgets_props(data["state"])
+        self._compute_and_send_widgets_props()
 
     def widgets_changed(self, data):
         # data: { type: widgets-changed, widgets, state }
         self.py.widgets = data["widgets"]
-        self._compute_and_send_widgets_props(data["state"])
+        self._compute_and_send_widgets_props()
 
-    def _compute_and_send_widgets_props(self, state):
+    def _compute_and_send_widgets_props(self):
         try:
-            computed = self.py.evaluate_widgets(state)
+            computed = self.py.evaluate_widgets()
             self.broker.send({"type": "widgets-computed", **computed})
         except Exception as e:
             self.broker.send(
-                {"type": "widgets-computed", "errors": {"general": {"repr": traceback.format_exc()}}}
+                {
+                    "type": "widgets-computed",
+                    "errors": {"general": {"repr": traceback.format_exc()}},
+                }
             )
 
 
