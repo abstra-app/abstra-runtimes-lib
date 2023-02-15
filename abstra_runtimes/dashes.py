@@ -160,7 +160,7 @@ class MessageHandler:
         cmd = self.py.widgets[widget_id]["events"].get(type)
         if cmd:
             self.py.execute_widget_event(widget_id, cmd)
-        self._compute_and_send_widgets_props()
+            self._compute_and_send_widgets_props()
 
     def eval(self, data):
         # data: {type: eval, expression: string}
