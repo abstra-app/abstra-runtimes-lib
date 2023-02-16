@@ -3,12 +3,14 @@ import traceback
 from .broker import DashesBroker
 from .utils import convert_answer, revert_value, btos, read_file
 from .hf import get_widget_class
+import bdb
 
 
 class PythonProgram:
     def __init__(self, code: str) -> None:
         # widgets: { [wid]: { type: string, props: {[prop]: expr}, events: {[evt]: cmd} } }
         self.widgets = None
+        self.debugger = bdb.Bdb()
         self.state = {}
         # dash_page_state: { timestamp: int, widgets: { [widgetId: string]: { value: any } } }
         self.dash_page_state = None
@@ -16,10 +18,10 @@ class PythonProgram:
             self.ex(code)
 
     def ex(self, cmd: str):
-        exec(cmd, self.state, self.state)
+        self.debugger.run(cmd, self.state, self.state)
 
     def ev(self, expr: str):
-        return eval(expr, self.state, self.state)
+        return self.debugger.runeval(expr, self.state, self.state)
 
     def set_variable(self, variable: str, value):
         try:
