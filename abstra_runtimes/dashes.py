@@ -70,9 +70,11 @@ class PythonProgram:
             if widget.get("variable"):
                 try:
                     # Check if it is a variable returning it's value
-                    variable_value = self.ev(
-                        f'({widget["variable"]} := {widget["variable"]})'
+                    self.ev(widget["variable"])
+                    self.ex(
+                        f'{widget["variable"]} = {widget["variable"]}'
                     )
+                    variable_value = self.ev(widget["variable"])
                     computed_widgets["variables"][wid] = revert_value(
                         widget_class, variable_value
                     )
