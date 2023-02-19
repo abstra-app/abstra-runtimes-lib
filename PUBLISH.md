@@ -22,7 +22,7 @@ Delete the `dist` and `build` directories, if present
 Build the package:
 
 ```sh
-TAG=v1.2.3 python setup.py sdist bdist_wheel
+TAG=v1.2.5 python setup.py sdist bdist_wheel
 ```
 
 Check the contents of the distribution:
