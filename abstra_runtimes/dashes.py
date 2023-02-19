@@ -229,7 +229,7 @@ class CLI(object):
         elif os.getenv("CODE"):
             code = btos(os.getenv("CODE"))
 
-        if not code:
+        if code == None:
             print("Missing CODE")
             exit()
 
