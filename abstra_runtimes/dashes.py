@@ -136,8 +136,9 @@ class MessageHandler:
         # data: { type: widget-definition, widgets: { [wid]: { type: string, props: {[prop]: expr}, events: {[evt]: cmd} } } }
         self.py.widgets = data["widgets"]
 
-    def start(self, _data):
+    def start(self, data):
         # data: { type: start, state: PAGESTATE }
+        self.py.state["__query_params__"] = data["queryParams"]
         self._compute_and_send_widgets_props()
 
     def widget_input(self, data):
