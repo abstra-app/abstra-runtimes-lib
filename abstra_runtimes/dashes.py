@@ -1,3 +1,4 @@
+from urllib.parse import parse_qs
 import websocket as ws, os, traceback, fire
 import traceback
 from .broker import DashesBroker
@@ -138,7 +139,6 @@ class MessageHandler:
 
     def start(self, data):
         # data: { type: start, state: PAGESTATE }
-        self.py.state["__query_params__"] = data["queryParams"]
         self._compute_and_send_widgets_props()
 
     def widget_input(self, data):
@@ -195,11 +195,12 @@ class MessageHandler:
             )
 
 
-def __run__(code: str, execution_id: str):
+def __run__(code: str, execution_id: str, query_params: dict):
     broker = DashesBroker(execution_id)
 
     try:
         py = PythonProgram(code)
+        py.state["__query_params__"] = query_params
         broker.send({"type": "program-ready"})
     except Exception as e:
         broker.send({"type": "program-start-failed", "error": traceback.format_exc()})
@@ -232,7 +233,9 @@ class CLI(object):
             print("Missing CODE")
             exit()
 
-        __run__(code, execution_id)
+        query_params = parse_qs(kwargs.get("queryParams"))
+
+        __run__(code, execution_id, query_params)
 
 
 if __name__ == "__main__":
