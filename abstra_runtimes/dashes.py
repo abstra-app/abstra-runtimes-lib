@@ -7,10 +7,10 @@ from .hf import get_widget_class
 
 
 class PythonProgram:
-    def __init__(self, code: str) -> None:
+    def __init__(self, code: str, initial_state) -> None:
         # widgets: { [wid]: { type: string, props: {[prop]: expr}, events: {[evt]: cmd} } }
         self.widgets = None
-        self.state = {}
+        self.state = initial_state
         # dash_page_state: { timestamp: int, widgets: { [widgetId: string]: { value: any } } }
         self.dash_page_state = None
         if code:
@@ -37,11 +37,11 @@ class PythonProgram:
         converted_value = convert_answer(cls, value)
         return cls, converted_value
 
-    def execute_widget_event(self, wid, cmd):
+    def execute_widget_event(self, wid, cmd, payload):
         _, widget_value = self.get_widget_context(wid)
 
         self.state.update({"__widget__": widget_value})
-        self.state.update({"__event__": {"value": widget_value}})
+        self.state.update({"__event__": {"value": widget_value, "payload": payload}})
 
         try:
             self.ex(cmd)
@@ -157,10 +157,11 @@ class MessageHandler:
         # data: { type: widget-event, widgetId: string, event: { type: string }, state: PAGESTATE }
         widget_id = data["widgetId"]
         type = data["event"]["type"]
+        payload = data["event"].get("payload", {})
 
         cmd = self.py.widgets[widget_id]["events"].get(type)
         if cmd:
-            self.py.execute_widget_event(widget_id, cmd)
+            self.py.execute_widget_event(widget_id, cmd, payload)
             self._compute_and_send_widgets_props()
 
     def eval(self, data):
@@ -199,10 +200,14 @@ def __run__(code: str, execution_id: str, query_params: dict):
     broker = DashesBroker(execution_id)
 
     try:
-        py = PythonProgram(code)
-        py.state["__query_params__"] = query_params
-        py.state["__redirect__"] = lambda url, params={}: broker.send(
-            {"type": "redirect", "url": url, "queryParams": params}
+        py = PythonProgram(
+            code,
+            {
+                "__query_params__": query_params,
+                "__redirect__": lambda url, params={}: broker.send(
+                    {"type": "redirect", "url": url, "queryParams": params}
+                ),
+            },
         )
         broker.send({"type": "program-ready"})
     except Exception as e:
