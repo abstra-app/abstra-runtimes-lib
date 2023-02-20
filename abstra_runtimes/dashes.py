@@ -201,6 +201,7 @@ def __run__(code: str, execution_id: str, query_params: dict):
     try:
         py = PythonProgram(code)
         py.state["__query_params__"] = query_params
+        py.state["__redirect__"] = lambda url, params={}: broker.send({"type": "redirect", "url": url, "queryParams": params})
         broker.send({"type": "program-ready"})
     except Exception as e:
         broker.send({"type": "program-start-failed", "error": traceback.format_exc()})
