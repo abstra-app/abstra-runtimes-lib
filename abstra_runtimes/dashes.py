@@ -232,8 +232,8 @@ class CLI(object):
             exit()
 
         code = None
-        if kwargs.get("file"):
-            code = read_file(kwargs.get("file"))
+        if kwargs.get("file") or os.getenv("CODE_FILE_PATH"):
+            code = read_file(kwargs.get("file") or os.getenv("CODE_FILE_PATH"))
         elif os.getenv("CODE"):
             code = btos(os.getenv("CODE"))
 
