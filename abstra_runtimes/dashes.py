@@ -10,6 +10,7 @@ class PythonProgram:
     def __init__(self, code: str, initial_state) -> None:
         # widgets: { [wid]: { type: string, props: {[prop]: expr}, events: {[evt]: cmd} } }
         self.widgets = None
+        # state: { [variable: string]: value }
         self.state = initial_state
         # dash_page_state: { timestamp: int, widgets: { [widgetId: string]: { value: any } } }
         self.dash_page_state = None
@@ -157,12 +158,14 @@ class MessageHandler:
         # data: { type: widget-event, widgetId: string, event: { type: string }, state: PAGESTATE }
         widget_id = data["widgetId"]
         type = data["event"]["type"]
-        payload = data["event"].get("payload", {})
-
         cmd = self.py.widgets[widget_id]["events"].get(type)
-        if cmd:
-            self.py.execute_widget_event(widget_id, cmd, payload)
-            self._compute_and_send_widgets_props()
+
+        if not cmd:
+            return
+
+        payload = data["event"].get("payload", {})
+        self.py.execute_widget_event(widget_id, cmd, payload)
+        self._compute_and_send_widgets_props()
 
     def eval(self, data):
         # data: {type: eval, expression: string}
