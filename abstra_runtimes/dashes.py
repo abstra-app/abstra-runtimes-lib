@@ -155,7 +155,7 @@ class MessageHandler:
         self._compute_and_send_widgets_props()
 
     def widget_event(self, data):
-        # data: { type: widget-event, widgetId: string, event: { type: string }, state: PAGESTATE }
+        # data: { type: widget-event, widgetId: string, event: { type: string, payload: any }, state: PAGESTATE }
         widget_id = data["widgetId"]
         type = data["event"]["type"]
         cmd = self.py.widgets[widget_id]["events"].get(type)
