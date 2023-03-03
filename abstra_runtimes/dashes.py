@@ -1,17 +1,15 @@
-from urllib.parse import parse_qs
 import websocket as ws, os, traceback, fire
-import traceback
 from .broker import DashesBroker
 from .utils import convert_answer, revert_value, btos, read_file
 from .hf import get_widget_class
 
 
 class PythonProgram:
-    def __init__(self, code: str, initial_state) -> None:
+    def __init__(self, code: str) -> None:
         # widgets: { [wid]: { type: string, props: {[prop]: expr}, events: {[evt]: cmd} } }
         self.widgets = None
         # state: { [variable: string]: value }
-        self.state = initial_state
+        self.state = {}
         # dash_page_state: { timestamp: int, widgets: { [widgetId: string]: { value: any } } }
         self.dash_page_state = None
         if code:
@@ -199,19 +197,11 @@ class MessageHandler:
             )
 
 
-def __run__(code: str, execution_id: str, query_params: dict):
+def __run__(code: str, execution_id: str):
     broker = DashesBroker(execution_id)
 
     try:
-        py = PythonProgram(
-            code,
-            {
-                "__query_params__": query_params,
-                "__redirect__": lambda url, params={}: broker.send(
-                    {"type": "redirect", "url": url, "queryParams": params}
-                ),
-            },
-        )
+        py = PythonProgram(code)
         broker.send({"type": "program-ready"})
     except Exception as e:
         broker.send({"type": "program-start-failed", "error": traceback.format_exc()})
@@ -244,9 +234,7 @@ class CLI(object):
             print("Missing CODE")
             exit()
 
-        query_params = parse_qs(kwargs.get("queryParams"))
-
-        __run__(code, execution_id, query_params)
+        __run__(code, execution_id)
 
 
 if __name__ == "__main__":
