@@ -26,4 +26,8 @@ def overload_abstra_sdk(broker):
             if type == "auth:validation-ended":
                 return AuthResponse(data["email"])
 
+    def redirect(url, query_params={}):
+        broker.send({"type": "redirect", "url": url, "queryParams": query_params})
+
     abstra_dashes.get_user = get_user
+    abstra_dashes.redirect = redirect
