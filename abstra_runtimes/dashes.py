@@ -1,7 +1,7 @@
 import websocket as ws, os, traceback, fire
 from .broker import DashesBroker
 from .utils import convert_answer, revert_value, btos, read_file
-from .hf import get_widget_class
+from abstra.widgets import get_widget_class
 
 
 class PythonProgram:

@@ -1,6 +1,16 @@
 import sys
 import abstra.dashes as abstra_dashes
-from .hf import AuthResponse
+
+
+class AuthResponse:
+    """The response from the authentication process
+
+    Attributes:
+      email (str): The email address of the user
+    """
+
+    def __init__(self, email: str):
+        self.email = email
 
 
 def overload_stdio(broker):
