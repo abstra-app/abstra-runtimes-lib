@@ -28,7 +28,7 @@ def overload_stdio(broker):
     sys.stderr.write = lambda text: writeWraper("stderr", stderr_write, text)
 
 
-def overload_abstra_sdk(broker):
+def overload_abstra_sdk(broker, params):
     def get_user():
         broker.send({"type": "auth:initialize"})
         while True:
@@ -39,5 +39,9 @@ def overload_abstra_sdk(broker):
     def redirect(url, query_params={}):
         broker.send({"type": "redirect", "url": url, "queryParams": query_params})
 
+    def get_query_params():
+        return params if params else {}
+
     abstra_dashes.get_user = get_user
     abstra_dashes.redirect = redirect
+    abstra_dashes.get_query_params = get_query_params

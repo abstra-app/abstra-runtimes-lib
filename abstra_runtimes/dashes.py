@@ -1,6 +1,7 @@
 import websocket as ws, os, traceback, fire
 from .broker import DashesBroker
 from .utils import convert_answer, revert_value, btos, read_file
+from .overloads import overload_abstra_sdk, overload_stdio
 from abstra.widgets import get_widget_class
 
 
@@ -12,14 +13,19 @@ class PythonProgram:
         self.state = {}
         # dash_page_state: { timestamp: int, widgets: { [widgetId: string]: { value: any } } }
         self.dash_page_state = None
-        if code:
-            self.ex(code)
+        self.code = code
 
     def ex(self, cmd: str):
         exec(cmd, self.state, self.state)
 
     def ev(self, expr: str):
         return eval(expr, self.state, self.state)
+
+    def execute_initial_code(self):
+        if not self.code:
+            return
+
+        self.ex(self.code)
 
     def set_variable(self, variable: str, value):
         try:
@@ -119,7 +125,7 @@ class MessageHandler:
     def handle(self, type: str, data):
         handlers = {
             "widgets-definition": self.widget_definition,
-            "start": self.start,
+            "broker-start": self.start,
             "widget-event": self.widget_event,
             "widgets-changed": self.widgets_changed,
             "eval": self.eval,
@@ -138,6 +144,17 @@ class MessageHandler:
 
     def start(self, data):
         # data: { type: start, state: PAGESTATE }
+        self.py.widgets = data["widgetsDefinition"]
+        overload_abstra_sdk(self.broker, data["params"])
+        overload_stdio(self.broker)
+        try:
+            self.py.execute_initial_code()
+        except Exception as e:
+            self.broker.send(
+                {"type": "program-start-failed", "error": traceback.format_exc()}
+            )
+            exit()
+
         self._compute_and_send_widgets_props()
 
     def widget_input(self, data):
@@ -199,13 +216,7 @@ class MessageHandler:
 
 def __run__(code: str, execution_id: str):
     broker = DashesBroker(execution_id)
-
-    try:
-        py = PythonProgram(code)
-        broker.send({"type": "program-ready"})
-    except Exception as e:
-        broker.send({"type": "program-start-failed", "error": traceback.format_exc()})
-        exit()
+    py = PythonProgram(code)
 
     msg_handler = MessageHandler(py, broker)
     while True:
