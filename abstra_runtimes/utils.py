@@ -38,5 +38,5 @@ def revert_value(cls, value):
 
 
 def read_file(filename: str):
-    with open(filename, "r") as f:
+    with open(filename, "r", encoding="utf8") as f:
         return f.read()
