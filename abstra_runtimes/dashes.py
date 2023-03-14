@@ -3,6 +3,7 @@ from .broker import DashesBroker
 from .utils import convert_answer, revert_value, btos, read_file
 from .overloads import overload_abstra_sdk, overload_stdio
 from abstra.widgets import get_widget_class
+from .autocomplete import get_suggestions
 
 
 class PythonProgram:
@@ -113,6 +114,9 @@ class PythonProgram:
         }
         """
 
+    def get_autocomplete_suggestions(self, added_code_snippet):
+        return get_suggestions(self.code, added_code_snippet)
+
 
 class MessageHandler:
     py: PythonProgram
@@ -130,6 +134,7 @@ class MessageHandler:
             "widgets-changed": self.widgets_changed,
             "eval": self.eval,
             "widget-input": self.widget_input,
+            "autocomplete:load": self.autocomplete_load,
         }
         handler = handlers.get(type, self.default_handler)
         self.py.dash_page_state = data.get("state", self.py.dash_page_state)
@@ -200,6 +205,21 @@ class MessageHandler:
         # data: { type: widgets-changed, widgets, state }
         self.py.widgets = data["widgets"]
         self._compute_and_send_widgets_props()
+
+    def autocomplete_load(self, data):
+        # data: { type: autocomplete:load, suggestionsFor: string, code: string }
+        try:
+            suggestions = self.py.get_autocomplete_suggestions(data["code"])
+        except Exception as e:
+            suggestions = []
+
+        self.broker.send(
+            {
+                "type": "autocomplete:suggestions",
+                "suggestionsFor": data["suggestionsFor"],
+                "suggestions": suggestions,
+            }
+        )
 
     def _compute_and_send_widgets_props(self):
         try:
