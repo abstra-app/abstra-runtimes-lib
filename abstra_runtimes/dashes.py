@@ -2,7 +2,12 @@ import websocket as ws, os, traceback, fire
 from .broker import DashesBroker
 from .utils import convert_answer, revert_value, btos, read_file
 from .overloads import overload_abstra_sdk, overload_stdio
-from abstra.widgets import get_widget_class
+from abstra.widgets import (
+    get_widget_class,
+    is_prop_required,
+    get_widget_name,
+    get_prop_type,
+)
 from .autocomplete import get_suggestions
 
 
@@ -66,6 +71,7 @@ class PythonProgram:
             "errors": {"widgets": {}, "props": {}, "variables": {}},
         }
         for wid, widget in self.widgets.items():
+            widget_type = widget["type"]
             widget_class, widget_value = self.get_widget_context(wid)
             self.state.update({"__widget__": widget_value})
 
@@ -88,16 +94,29 @@ class PythonProgram:
                     }
 
             for prop, expr in widget["props"].items():
+                if is_prop_required(widget_type, prop) and (
+                    expr.strip() == "" or expr is None
+                ):
+                    prop_type = get_prop_type(widget_type, prop)
+                    widget_name = get_widget_name(widget_type)
+                    errors[prop] = {"repr": "Missing required prop"}
+                    computed_widgets["errors"]["widgets"][wid] = {
+                        "repr": f'Missing required prop "{prop}" ({prop_type}) for widget "{widget_name}".'
+                    }
+                    break
+
                 try:
                     props[prop] = self.ev(expr) if expr else None
                 except Exception as e:
                     errors[prop] = {"repr": traceback.format_exc()}
-            try:
-                computed_widgets["props"][wid] = widget_class(**props).json()
-            except Exception as e:
-                computed_widgets["errors"]["widgets"][wid] = {
-                    "repr": traceback.format_exc()
-                }
+            else:
+                try:
+                    computed_widgets["props"][wid] = widget_class(**props).json()
+                except Exception as e:
+                    computed_widgets["errors"]["widgets"][wid] = {
+                        "repr": traceback.format_exc()
+                    }
+
             computed_widgets["errors"]["props"][wid] = errors
 
         self.state.pop("__widget__", None)
