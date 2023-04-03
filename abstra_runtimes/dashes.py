@@ -1,6 +1,6 @@
 import websocket as ws, os, traceback, fire
 from .broker import DashesBroker
-from .utils import convert_answer, revert_value, btos, read_file
+from .utils import convert_answer, revert_value, btos, read_file, prepate_traceback
 from .overloads import overload_abstra_sdk, overload_stdio
 from abstra.widgets import (
     get_widget_class,
@@ -174,8 +174,13 @@ class MessageHandler:
         try:
             self.py.execute_initial_code()
         except Exception as e:
+            tb = traceback.extract_tb(e.__traceback__)
             self.broker.send(
-                {"type": "program-start-failed", "error": traceback.format_exc()}
+                {
+                    "type": "program-start-failed",
+                    "error": traceback.format_exc(),
+                    "stack": prepate_traceback(tb),
+                }
             )
             exit()
 

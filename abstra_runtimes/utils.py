@@ -1,4 +1,5 @@
 import base64, json
+from traceback import StackSummary
 
 
 def serialize(obj):
@@ -40,3 +41,11 @@ def revert_value(cls, value):
 def read_file(filename: str):
     with open(filename, "r", encoding="utf8") as f:
         return f.read()
+
+
+def prepate_traceback(tb: StackSummary):
+    for i, stack in enumerate(tb):
+        if stack.filename == "<string>":
+            return [{"line": x.lineno, "filename": x.filename} for x in tb[i:]]
+    else:
+        return []
