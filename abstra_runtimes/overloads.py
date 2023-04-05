@@ -28,7 +28,9 @@ def overload_stdio(broker):
     sys.stderr.write = lambda text: writeWraper("stderr", stderr_write, text)
 
 
-def overload_abstra_sdk(broker, params):
+def overload_abstra_sdk(broker, _params):
+    params = _params or {}
+
     def get_user():
         broker.send({"type": "auth:initialize"})
         while True:
@@ -36,11 +38,11 @@ def overload_abstra_sdk(broker, params):
             if type == "auth:validation-ended":
                 return AuthResponse(data["email"])
 
-    def redirect(url, query_params={}):
+    def redirect(url, query_params=params):
         broker.send({"type": "redirect", "url": url, "queryParams": query_params})
 
     def get_query_params():
-        return params if params else {}
+        return params
 
     abstra_dashes.get_user = get_user
     abstra_dashes.redirect = redirect
