@@ -3,3 +3,4 @@ websocket-client
 abstra
 fire
 jedi
+simplejson

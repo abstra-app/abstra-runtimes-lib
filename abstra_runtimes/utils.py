@@ -1,13 +1,14 @@
 import base64, json
 from traceback import StackSummary
+import simplejson
 
 
 def serialize(obj):
-    return json.dumps(obj)
+    return simplejson.dumps(obj, ignore_nan=True)
 
 
 def deserialize(st):
-    return json.loads(st)
+    return simplejson.loads(st)
 
 
 def is_serializable(st):
