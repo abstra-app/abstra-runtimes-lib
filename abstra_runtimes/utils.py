@@ -44,6 +44,14 @@ def read_file(filename: str):
         return f.read()
 
 
+def filter_object(object, filter_func):
+    filtered = {}
+    for key, value in object.items():
+        if filter_func(value):
+            filtered[key] = value
+    return filtered
+
+
 def prepate_traceback(tb: StackSummary):
     for i, stack in enumerate(tb):
         if stack.filename == "<string>":
