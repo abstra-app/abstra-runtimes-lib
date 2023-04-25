@@ -111,13 +111,13 @@ class PythonProgram:
             self.state.pop("__widget__", None)
             self.state.pop("__event__", None)
 
-    def execute_widget_input(self, widget_id):
+    def execute_widget_input(self, widget_id, dash_page_state: DashPageState):
         variable = self.get_widget(widget_id).get("variable")
 
         if not variable:
             return False
 
-        _, value = self.get_widget_context(widget_id)
+        _, value = self.get_widget_context(widget_id, dash_page_state)
         self.set_variable(variable, value)
         return True
 

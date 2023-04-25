@@ -53,7 +53,7 @@ class MessageHandler:
 
     def widget_input(self, data):
         # data: { type: widget-input, widgetId: string, state: PAGESTATE }
-        if self.py.execute_widget_input(data["widgetId"]):
+        if self.py.execute_widget_input(data["widgetId"], self.dash_page_state):
             self._compute_and_send_widgets_props()
 
     def widget_event(self, data):
