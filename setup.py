@@ -26,6 +26,6 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/abstra-app/abstra-runtimes-lib",
     license="MIT",
-    packages=["abstra_runtimes"],
+    packages=["abstra_runtimes", "abstra_runtimes.dashes_module"],
     install_requires=requirements,
 )
