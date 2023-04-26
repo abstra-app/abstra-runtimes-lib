@@ -44,6 +44,13 @@ def overload_abstra_sdk(broker, _params):
     def get_query_params():
         return params
 
+    def alert(message, severity="info"):
+        if severity not in ["info", "warn", "error", "success"]:
+            severity = "info"
+
+        broker.send({"type": "alert", "message": message, "severity": severity})
+
     abstra_dashes.get_user = get_user
     abstra_dashes.redirect = redirect
     abstra_dashes.get_query_params = get_query_params
+    abstra_dashes.alert = alert
