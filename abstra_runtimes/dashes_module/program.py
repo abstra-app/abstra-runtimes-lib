@@ -9,6 +9,7 @@ from abstra.widgets import (
     is_prop_required,
     get_widget_name,
     get_prop_type,
+    is_broker_prop_form_only,
 )
 
 SLOTABLE_TYPES = ["if-block"]
@@ -188,6 +189,13 @@ class PythonProgram:
         self.state.pop("__widget__", None)
         return variable, props, errors
 
+    def __filter_form_only_props(self, widget: Widget, props: dict):
+        return {
+            k: v
+            for k, v in props.items()
+            if not is_broker_prop_form_only(widget["type"], k)
+        }
+
     def __compute_widget_props(self, widget: Widget, widget_class: str):
         props = {"key": "key"}
         props_errors = {}
@@ -212,7 +220,9 @@ class PythonProgram:
                 props_errors[prop] = {"repr": traceback.format_exc()}
         else:
             try:
-                result = widget_class(**props).json()
+                result = self.__filter_form_only_props(
+                    widget, widget_class(**props).json()
+                )
             except Exception as e:
                 widget_errors = {"repr": traceback.format_exc()}
 
