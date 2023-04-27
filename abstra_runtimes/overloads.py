@@ -51,7 +51,11 @@ def overload_abstra_sdk(broker, _params):
         broker.send({"type": "alert", "message": message, "severity": severity})
 
     def execute_js(code, context={}):
-        broker.send({"type": "execute-js", "code": code, "context": context})
+        broker.send({"type": "execute-js:request", "code": code, "context": context})
+        while True:
+            type, data = broker.recv()
+            if type == "execute-js:response":
+                return data
 
     abstra_dashes.get_user = get_user
     abstra_dashes.redirect = redirect
