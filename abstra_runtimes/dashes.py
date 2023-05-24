@@ -89,6 +89,7 @@ class MessageHandler:
     def variable_created(self, data):
         # data: { type: variable-created, name, value?, state }
         self.py.set_variable(data["name"], data.get("value"))
+        self._compute_and_send_widgets_props()
 
     def autocomplete_load(self, data):
         # data: { type: autocomplete:load, suggestionsFor: string, code: string }
