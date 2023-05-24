@@ -20,6 +20,7 @@ class MessageHandler:
             "broker-start": self.start,
             "widget-event": self.widget_event,
             "widgets-changed": self.widgets_changed,
+            "variable-created": self.variable_created,
             "eval": self.eval,
             "widget-input": self.widget_input,
             "autocomplete:load": self.autocomplete_load,
@@ -84,6 +85,10 @@ class MessageHandler:
         # data: { type: widgets-changed, dashDefinition, state }
         self.py.slot = data["dashDefinition"]["slot"]
         self._compute_and_send_widgets_props()
+
+    def variable_created(self, data):
+        # data: { type: variable-created, name, value?, state }
+        self.py.set_variable(data["name"], data.get("value"))
 
     def autocomplete_load(self, data):
         # data: { type: autocomplete:load, suggestionsFor: string, code: string }
