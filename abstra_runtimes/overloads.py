@@ -17,7 +17,7 @@ def overload_stdio(broker):
     def writeWraper(type, write, text):
         try:
             write(text)
-            broker.send({"type": type, "payload": text})
+            broker.send({"type": type, "log": text})
         finally:
             return len(text)
 
